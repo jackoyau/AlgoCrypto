@@ -4,8 +4,10 @@ import { io } from 'socket.io-client'
 
 
 const HomeScreen = () => {
-  const[stocks, setStocks] = useState()
+  const[stockPrice, setStockPrice] = useState()
+  const[stockPercentChange, setStockPercentChange] = useState()
   const[ws, setWs] = useState(null)
+  
   const connectWebSocket = () => {
     setWs(io('http://localhost:5000', {
       withCredentials: true,
@@ -13,16 +15,17 @@ const HomeScreen = () => {
         "my-custom-header": "abcd"
       }
     }))
-}
-  
-const initWebSocket = () => {
-  ws.on('getMessage', message => {
-      console.log(message)
-  })
-}
-const sendMessage = () => {
-  ws.emit('getMessage', {name: 'jacko'})
-}
+    
+  }
+  const initWebSocket = () => {
+    ws.on('getMessage', message => {
+        console.log(message)
+        const { close, percentChange } = message
+        setStockPrice(close)
+        setStockPercentChange(percentChange)
+    })
+  }
+
 
   useEffect(()=>{
     // const intervalId = setInterval(() => {
@@ -33,8 +36,7 @@ const sendMessage = () => {
     //   getData()
     // }, 1000)
     // return () => clearInterval(intervalId);
-    if(ws){
-      
+    if(ws){ 
       console.log('client success connect!')
       initWebSocket()
     }
@@ -42,7 +44,11 @@ const sendMessage = () => {
   
   return (
     <>
-    {/* <h1>{stocks}</h1> */}
+    <h1>ETHUSDT: {stockPrice} {stockPercentChange>'0' ? <span style={{color: 'green'}}>{stockPercentChange}%</span> 
+                                : stockPercentChange<'0' ?<span style={{color: 'red'}}>{stockPercentChange}%</span>
+                                : stockPercentChange==='0' ?<span style={{color: 'grey'}}>{stockPercentChange}%</span>
+                              : <span></span>}
+    </h1>
     <input type='button' value='connect' onClick={connectWebSocket} />
     <input type='button' value='sendMessage' onClick={sendMessage} />
     </>

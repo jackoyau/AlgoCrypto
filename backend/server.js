@@ -29,22 +29,22 @@ const io = new Server(server,{
 })   
 io.on('connection', socket => {
       console.log('success connect!') 
-      socket.on('getMessage', message => {
-        console.log('server recieved client msg')
-        socket.emit('getMessage', message)
-        binance.websockets.chart("BNBBTC", "1m", (symbol, interval, chart) => {
-            let tick = binance.last(chart)
-            const last = chart[tick].close
-            socket.emit('getMessage',chart)
-            // Optionally convert 'chart' object to array:
-            // let ohlc = binance.ohlc(chart);
-            // console.info(symbol, ohlc);
-            socket.emit('getMessage', symbol+" last price: "+last)
-        })
-        binance.websockets.prevDay('BNBBTC', (error, response) => {
+    //   socket.on('getMessage', message => {
+    //     console.log('server recieved client msg')
+        // socket.emit('getMessage', message)
+        // binance.websockets.chart("BNBBTC", "1m", (symbol, interval, chart) => {
+        //     let tick = binance.last(chart)
+        //     const last = chart[tick].close
+        //     socket.emit('getMessage',chart)
+        //     // Optionally convert 'chart' object to array:
+        //     // let ohlc = binance.ohlc(chart);
+        //     // console.info(symbol, ohlc);
+        //     socket.emit('getMessage', symbol+" last price: "+last)
+        // })
+        binance.websockets.prevDay('ETHUSDT', (error, response) => {
             socket.emit('getMessage', response)
           });
-    })
+    // })
 })
 server.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode and socket.io on port ${PORT}`))
 
