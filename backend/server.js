@@ -4,7 +4,7 @@ import http from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
 import Binance from 'node-binance-api'
-import stockRoutes from './routes/stockRoutes.js'
+import chartRoutes from './routes/chartRoutes.js'
 
 dotenv.config()
 const PORT = process.env.PORT || 5000
@@ -16,9 +16,9 @@ const binance = new Binance().options({
 const app = express()
 app.use(cors())
 app.use(express.json())
-app.use('/api/stocks', stockRoutes)
+app.use('/api/chart', chartRoutes)
 
-const server = http.createServer()
+const server = http.createServer(app)
 const io = new Server(server,{
     cors: {
         origin: "http://localhost:3000",
@@ -29,21 +29,43 @@ const io = new Server(server,{
 })   
 io.on('connection', socket => {
       console.log('success connect!') 
-    //   socket.on('getMessage', message => {
-    //     console.log('server recieved client msg')
-        // socket.emit('getMessage', message)
-        // binance.websockets.chart("BNBBTC", "1m", (symbol, interval, chart) => {
-        //     let tick = binance.last(chart)
-        //     const last = chart[tick].close
-        //     socket.emit('getMessage',chart)
-        //     // Optionally convert 'chart' object to array:
-        //     // let ohlc = binance.ohlc(chart);
-        //     // console.info(symbol, ohlc);
-        //     socket.emit('getMessage', symbol+" last price: "+last)
-        // })
-        binance.websockets.prevDay('ETHUSDT', (error, response) => {
-            socket.emit('getMessage', response)
-          });
+      
+        // Periods: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
+        binance.websockets.candlesticks(['BTCUSDT'], "5m", (candlesticks) => {
+            let { e:eventType, E:eventTime, s:symbol, k:ticks } = candlesticks;
+            let { o:open, h:high, l:low, c:close, v:volume, n:trades, i:interval, x:isFinal, q:quoteVolume, V:buyVolume, Q:quoteBuyVolume } = ticks;
+            let time = (Math.floor(eventTime/(10**5)))*100
+            while (time%3 !=0){
+                time = time-100
+            }
+            let updateCandles = {
+                "time": time,
+                "open": open,
+                "high": high,   
+                "low": low,
+                "close": close,
+            }
+            socket.emit('updateCandles',updateCandles)
+        });
+       
+        
+        let prevPrice = 0
+
+        binance.websockets.prevDay('BTCUSDT', (error, response) => {
+            
+            response.close =parseFloat(response.close)
+            if(response.close>=1){
+                response.close = response.close.toFixed(2)
+            }
+            if(response.close !== prevPrice){
+                response.percentChange=(Math.round(response.percentChange*100)/100).toFixed(2)
+                socket.emit('getMessage', response) 
+            }
+            prevPrice = response.close
+               
+        })
+         
+        
     // })
 })
 server.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode and socket.io on port ${PORT}`))
@@ -51,5 +73,5 @@ server.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode 
 
 
 
-// const PORT = process.env.PORT || 5000
+
 // app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`))
