@@ -12,7 +12,6 @@ const HomeScreen = () => {
   const[updateCandle, setUpdateCandle] = useState({})
  
   const[ws, setWs] = useState(null)
-  
   const connectWebSocket = () => {
     setWs(io('http://localhost:5000', {
       withCredentials: true,
@@ -23,15 +22,15 @@ const HomeScreen = () => {
   }
   const initWebSocket = () => {
     ws.on('getMessage', message => {
-
       const { symbol, close, percentChange } = message
         setStockSymbol(symbol)
-        setStockPrice(close)
+        // setStockPrice(close)
         setStockPercentChange(percentChange)
  
     })
     ws.on('updateCandles', message => {
       setUpdateCandle(message)
+      setStockPrice(parseFloat(message.close))
     })
   }
 
@@ -57,7 +56,7 @@ const HomeScreen = () => {
                                 : stockPercentChange<'0' ?<span style={{color: 'red'}}>{stockPercentChange}%</span>
                                 : stockPercentChange==='0' ?<span style={{color: 'grey'}}>{stockPercentChange}%</span>
                               : <span></span>}</h4>
-      <Graph updateCandle={updateCandle} />
+      <Graph  updateCandle={updateCandle}/>
       
       {/* <input type='button' value='connect' onClick={connectWebSocket} /> */}
     </>
